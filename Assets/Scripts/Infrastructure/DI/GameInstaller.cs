@@ -11,6 +11,7 @@ using Infrastructure.Events;
 using Infrastructure.Services;
 using Infrastructure.SceneManagement;
 using Infrastructure.Bootstrap;
+using Infrastructure.UI;
 using Zenject;
 
 namespace Infrastructure.DI
@@ -25,8 +26,9 @@ namespace Infrastructure.DI
         [SerializeField] private InputHandler _inputHandler;
         [SerializeField] private GameBootstrap _gameBootstrap;
 
-        [Header("Performance")]
+        [Header("Performance & UI")]
         [SerializeField] private PerformanceManager _performanceManager;
+        [SerializeField] private LoadingScreenManager _loadingScreenManager;
 
         [Header("Fallback Settings")]
         [SerializeField] private bool _createFallbackComponents = true;
@@ -50,8 +52,11 @@ namespace Infrastructure.DI
             // Component Bindings
             BindSceneComponents();
             
-            // Performance Systems
-            BindPerformanceSystems();
+            // Performance & UI Systems
+            BindPerformanceAndUISystems();
+            
+            // Object Pool - Create a simple pool for Transform markers
+            CreateObjectPools();
             
             // Create fallbacks if needed
             if (_createFallbackComponents)
@@ -72,11 +77,11 @@ namespace Infrastructure.DI
             if (_cameraController != null)
                 Container.Bind<ICameraController>().FromInstance(_cameraController).AsSingle();
 
-            // Path renderer
+            // Enhanced path renderer
             if (_pathRenderer != null)
                 Container.Bind<IPathRenderer>().FromInstance(_pathRenderer).AsSingle();
 
-            // Input handler
+            // Enhanced input handler
             if (_inputHandler != null)
             {
                 Container.Bind<IInputHandler>().FromInstance(_inputHandler).AsSingle();
@@ -94,8 +99,9 @@ namespace Infrastructure.DI
             }
         }
 
-        private void BindPerformanceSystems()
+        private void BindPerformanceAndUISystems()
         {
+            // Performance manager
             if (_performanceManager != null)
             {
                 Container.BindInstance(_performanceManager).AsSingle();
@@ -104,12 +110,52 @@ namespace Infrastructure.DI
             {
                 Container.Bind<PerformanceManager>().FromNewComponentOnNewGameObject().AsSingle().NonLazy();
             }
+
+            // Loading screen manager - Create simple version without UI dependencies
+            if (_loadingScreenManager != null)
+            {
+                Container.BindInstance(_loadingScreenManager).AsSingle();
+            }
+            else
+            {
+                // Create a simple loading screen manager without UI components
+                var loadingScreenGO = new GameObject("LoadingScreenManager");
+                var loadingScreenManager = loadingScreenGO.AddComponent<LoadingScreenManager>();
+                Container.BindInstance(loadingScreenManager).AsSingle();
+                _loadingScreenManager = loadingScreenManager;
+                Debug.Log("Created simple LoadingScreenManager without UI dependencies");
+            }
+        }
+
+        private void CreateObjectPools()
+        {
+            // Create a simple marker pool for the path renderer
+            var markerPoolParent = new GameObject("MarkerPool").transform;
+            
+            // Create a simple Transform prefab for markers
+            var markerPrefab = new GameObject("MarkerPrefab");
+            markerPrefab.SetActive(false);
+            
+            var markerPool = new ObjectPool<Transform>(
+                markerPrefab.transform,
+                Container,
+                markerPoolParent,
+                "PathMarkers"
+            );
+            
+            Container.Bind<IObjectPool<Transform>>().FromInstance(markerPool).AsSingle();
         }
 
         private void CreateMissingComponents()
         {
             if (_boatController == null)
                 CreateFallbackBoat();
+            
+            if (_pathRenderer == null)
+                CreateFallbackPathRenderer();
+                
+            if (_inputHandler == null)
+                CreateFallbackInputHandler();
         }
 
         private void CreateFallbackBoat()
@@ -122,6 +168,29 @@ namespace Infrastructure.DI
             
             Container.Bind<IBoatController>().FromInstance(boatController).AsSingle();
             _boatController = boatController;
+        }
+
+        private void CreateFallbackPathRenderer()
+        {
+            Debug.LogWarning("EnhancedPathRenderer not assigned, creating fallback");
+            
+            var pathRendererGO = new GameObject("EnhancedPathRenderer (Fallback)");
+            var pathRenderer = pathRendererGO.AddComponent<PathRenderer>();
+            
+            Container.Bind<IPathRenderer>().FromInstance(pathRenderer).AsSingle();
+            _pathRenderer = pathRenderer;
+        }
+
+        private void CreateFallbackInputHandler()
+        {
+            Debug.LogWarning("EnhancedInputHandler not assigned, creating fallback");
+            
+            var inputHandlerGO = new GameObject("EnhancedInputHandler (Fallback)");
+            var inputHandler = inputHandlerGO.AddComponent<InputHandler>();
+            
+            Container.Bind<IInputHandler>().FromInstance(inputHandler).AsSingle();
+            Container.BindInterfacesTo<InputHandler>().FromInstance(inputHandler).AsSingle();
+            _inputHandler = inputHandler;
         }
 
         public override void Start()

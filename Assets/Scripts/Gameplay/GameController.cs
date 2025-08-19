@@ -31,8 +31,10 @@ namespace Gameplay
         [Inject] private ICameraController _cameraController;
         [Inject] private IGameEventManager _eventManager;
         [Inject] private IAssetService _assetService;
-        [Inject] private LoadingScreenManager _loadingScreenManager;
-        [Inject] private PerformanceManager _performanceManager;
+        
+        // Optional dependencies - will be null if not bound
+        [Inject(Optional = true)] private LoadingScreenManager _loadingScreenManager;
+        [Inject(Optional = true)] private PerformanceManager _performanceManager;
 
         private bool _isGameActive;
         private bool _isInitialized;
@@ -95,9 +97,9 @@ namespace Gameplay
             Debug.Log("Initializing core systems...");
 
             // Initialize asset service
-            if (_assetService is AddressableAssetService enhancedAssetService)
+            if (_assetService is AddressableAssetService addressableAssetService)
             {
-                await enhancedAssetService.InitializeAsync();
+                await addressableAssetService.InitializeAsync();
             }
 
             // Initialize performance manager
@@ -125,15 +127,30 @@ namespace Gameplay
                 "Vegetation"
             };
 
-            if (_assetService is AddressableAssetService enhancedAssetService)
+            if (_assetService is AddressableAssetService addressableAssetService)
             {
-                await enhancedAssetService.PreloadAssetsAsync(essentialAssets, progress =>
+                await addressableAssetService.PreloadAssetsAsync(essentialAssets, progress =>
                 {
                     if (_loadingScreenManager != null)
                     {
                         _loadingScreenManager.UpdateProgress(progress, $"Loading assets... {progress * 100:F0}%");
                     }
                 });
+            }
+            else
+            {
+                // Fallback: load assets individually
+                foreach (var asset in essentialAssets)
+                {
+                    try
+                    {
+                        await _assetService.LoadAssetAsync<Object>(asset);
+                    }
+                    catch (System.Exception ex)
+                    {
+                        Debug.LogWarning($"Failed to preload asset {asset}: {ex.Message}");
+                    }
+                }
             }
         }
 
@@ -311,9 +328,9 @@ namespace Gameplay
             _isGameActive = false;
 
             // Clean up resources
-            if (_assetService is AddressableAssetService enhancedAssetService)
+            if (_assetService is AddressableAssetService addressableAssetService)
             {
-                enhancedAssetService.ClearCache();
+                addressableAssetService.ClearCache();
             }
 
             // Force garbage collection
@@ -389,9 +406,9 @@ namespace Gameplay
                 Debug.Log($"Current FPS: {_performanceManager.GetCurrentFPS():F1}");
             }
 
-            if (_assetService is AddressableAssetService enhancedAssetService)
+            if (_assetService is AddressableAssetService addressableAssetService)
             {
-                enhancedAssetService.LogCacheStatus();
+                Debug.Log($"Asset service initialized: {addressableAssetService.IsInitialized}");
             }
         }
 
@@ -403,9 +420,9 @@ namespace Gameplay
             }
 
             // Clean up resources
-            if (_assetService is AddressableAssetService enhancedAssetService)
+            if (_assetService is AddressableAssetService addressableAssetService)
             {
-                enhancedAssetService.ReleaseAllAssets();
+                addressableAssetService.ClearCache();
             }
         }
 

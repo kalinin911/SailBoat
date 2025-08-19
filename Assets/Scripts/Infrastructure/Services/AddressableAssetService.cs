@@ -32,13 +32,13 @@ namespace Infrastructure.Services
             if (_isInitialized)
                 return;
 
-            Debug.Log("Initializing Enhanced Asset Service...");
+            Debug.Log("Initializing Addressable Asset Service...");
             
             await InitializeAddressables();
             await PreloadEssentialAssets();
             
             _isInitialized = true;
-            Debug.Log("Enhanced Asset Service initialized successfully!");
+            Debug.Log("Addressable Asset Service initialized successfully!");
         }
 
         private async UniTask InitializeAddressables()
