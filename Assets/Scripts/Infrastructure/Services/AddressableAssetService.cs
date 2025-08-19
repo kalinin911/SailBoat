@@ -154,7 +154,6 @@ namespace Infrastructure.Services
             {
                 "DefaultMap",
                 "WaterTile",
-                "TerrainTile"
             };
 
             await PreloadAssetsAsync(essentialAssets, progress =>

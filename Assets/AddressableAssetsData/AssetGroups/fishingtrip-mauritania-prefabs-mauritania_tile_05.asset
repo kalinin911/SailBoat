@@ -16,7 +16,7 @@ MonoBehaviour:
   m_GUID: f4574858df173404c8140d32e68b57fa
   m_SerializeEntries:
   - m_GUID: 80e59b4df02df28499d0fc2bc4350b26
-    m_Address: Assets/Mauritania/Prefabs/mauritania_tile_05.prefab
+    m_Address: TerrainTile05
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

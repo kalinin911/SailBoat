@@ -14,8 +14,6 @@ namespace Gameplay.Map
         private readonly IHexGridManager _hexGridManager;
         private readonly DiContainer _container;
         private readonly IAssetService _assetService;
-
-        // Background management
         private readonly string _backgroundAssetKey = "WaterBackground";
 
         public MapGenerator(IHexGridManager hexGridManager, DiContainer container, IAssetService assetService)
@@ -35,10 +33,7 @@ namespace Gameplay.Map
             }
 
             var mapData = ParseMapData(mapTextAsset.text);
-
-            // Create background before generating tiles
             await CreateMapBackgroundAsync(mapData);
-
             return await CreateTilesFromDataAsync(mapData);
         }
 
@@ -46,7 +41,6 @@ namespace Gameplay.Map
         {
             try
             {
-                // Load background prefab
                 var backgroundPrefab = await _assetService.LoadAssetAsync<GameObject>(_backgroundAssetKey);
 
                 if (backgroundPrefab == null)
@@ -55,14 +49,10 @@ namespace Gameplay.Map
                     return;
                 }
 
-                // Instantiate background
                 var background = _container.InstantiatePrefab(backgroundPrefab);
                 background.name = $"MapBackground_{DateTime.Now.Ticks}";
 
-                // Calculate map bounds
                 var mapBounds = CalculateMapBounds(mapData);
-
-                // Position and scale background to cover the entire map
                 PositionAndScaleBackground(background, mapBounds);
 
                 Debug.Log($"Background created and positioned for map bounds: {mapBounds}");
@@ -79,13 +69,11 @@ namespace Gameplay.Map
             var height = mapData.GetLength(1);
             var hexSize = _hexGridManager.GetHexSize();
 
-            // Calculate world positions for corners using proper hex grid layout
             var minX = float.MaxValue;
             var maxX = float.MinValue;
             var minZ = float.MaxValue;
             var maxZ = float.MinValue;
 
-            // Sample corners and some middle points to get accurate bounds
             var samplePoints = new[]
             {
                 new Vector2Int(0, 0),
@@ -104,7 +92,6 @@ namespace Gameplay.Map
                 maxZ = Mathf.Max(maxZ, worldPos.z);
             }
 
-            // Add padding
             var padding = hexSize * 1.5f;
             minX -= padding;
             maxX += padding;
@@ -119,15 +106,12 @@ namespace Gameplay.Map
 
         private void PositionAndScaleBackground(GameObject background, Bounds mapBounds)
         {
-            // Position at map center, slightly below the tiles
             var backgroundPosition = mapBounds.center;
-            backgroundPosition.y = -0.1f; // Place below tiles
+            backgroundPosition.y = -0.1f;
             background.transform.position = backgroundPosition;
 
-            // Set scale directly, don't multiply with original scale
             var scaleMultiplier = CalculateScaleMultiplier(background, mapBounds);
-    
-            background.transform.localScale = scaleMultiplier; // Direct assignment, not multiplication
+            background.transform.localScale = scaleMultiplier;
 
             Debug.Log($"Background positioned at {backgroundPosition} with scale {background.transform.localScale}");
         }
@@ -136,12 +120,11 @@ namespace Gameplay.Map
         {
             var mapWidth = mapBounds.size.x;
             var mapDepth = mapBounds.size.z;
-    
+
             Debug.Log($"Map bounds: {mapWidth} x {mapDepth}");
-    
-            // Scale X and Y, keep Z at 1
+
             var scaleX = mapWidth;
-            var scaleY = mapDepth;  // This should scale Y, not Z
+            var scaleY = mapDepth;
             var scaleZ = 1f;
 
             Debug.Log($"Applying scale: X={scaleX}, Y={scaleY}, Z={scaleZ}");
@@ -153,19 +136,43 @@ namespace Gameplay.Map
         {
             var width = mapData.GetLength(0);
             var height = mapData.GetLength(1);
+            var totalTiles = width * height;
             var tiles = new HexTile[width, height];
 
-            var tasks = new List<UniTask>();
+            Debug.Log($"Creating {totalTiles} tiles in batches");
+
+            var tilesPerBatch = 50;
+            var processedTiles = 0;
 
             for (int x = 0; x < width; x++)
             {
+                var batchTasks = new List<UniTask>();
+
                 for (int y = 0; y < height; y++)
                 {
-                    tasks.Add(CreateTileAsync(x, y, mapData[x, y], tiles));
+                    batchTasks.Add(CreateTileAsync(x, y, mapData[x, y], tiles));
+                    
+                    if (batchTasks.Count >= tilesPerBatch)
+                    {
+                        await UniTask.WhenAll(batchTasks);
+                        processedTiles += batchTasks.Count;
+                        
+                        Debug.Log($"Progress: {processedTiles}/{totalTiles} tiles ({(float)processedTiles/totalTiles:P1})");
+                        batchTasks.Clear();
+                        await UniTask.NextFrame();
+                    }
+                }
+
+                if (batchTasks.Count > 0)
+                {
+                    await UniTask.WhenAll(batchTasks);
+                    processedTiles += batchTasks.Count;
+                    Debug.Log($"Progress: {processedTiles}/{totalTiles} tiles ({(float)processedTiles/totalTiles:P1})");
+                    await UniTask.NextFrame();
                 }
             }
 
-            await UniTask.WhenAll(tasks);
+            Debug.Log($"Tile creation completed: {totalTiles} tiles");
             return tiles;
         }
 
@@ -190,15 +197,30 @@ namespace Gameplay.Map
 
         private async UniTask<GameObject> CreateTileGameObjectAsync(TileType tileType)
         {
-            string prefabKey = tileType == TileType.Water ? "WaterTile" : "TerrainTile";
-
-            var tilePrefab = await _assetService.LoadAssetAsync<GameObject>(prefabKey);
-            if (tilePrefab == null)
+            if (tileType == TileType.Water)
             {
-                throw new InvalidOperationException($"Could not load tile prefab: {prefabKey}");
+                var tilePrefab = await _assetService.LoadAssetAsync<GameObject>("WaterTile");
+                if (tilePrefab == null)
+                {
+                    throw new InvalidOperationException($"Could not load tile prefab: WaterTile");
+                }
+                return _container.InstantiatePrefab(tilePrefab);
             }
-
-            return _container.InstantiatePrefab(tilePrefab);
+            else
+            {
+                // Only try to load terrain variants (remove fallback to old TerrainTile key)
+                var terrainVariant = UnityEngine.Random.Range(1, 8); // 1 to 7
+                var prefabKey = $"TerrainTile{terrainVariant:00}"; // TerrainTile01, TerrainTile02, etc.
+                
+                var tilePrefab = await _assetService.LoadAssetAsync<GameObject>(prefabKey);
+                
+                if (tilePrefab == null)
+                {
+                    throw new InvalidOperationException($"Could not load terrain tile prefab: {prefabKey}. Make sure TerrainTile01-07 are set up in Addressables.");
+                }
+                
+                return _container.InstantiatePrefab(tilePrefab);
+            }
         }
 
         public void AddRandomVegetationAndRocks(HexTile[,] tiles)
@@ -258,7 +280,7 @@ namespace Gameplay.Map
                     }
                     else
                     {
-                        mapData[x, y] = 0; // Default to water for invalid chars
+                        mapData[x, y] = 0;
                     }
                 }
             }

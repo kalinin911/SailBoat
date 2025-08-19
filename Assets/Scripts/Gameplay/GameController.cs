@@ -1,4 +1,5 @@
-﻿using Cysharp.Threading.Tasks;
+﻿using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using Core.HexGrid;
 using Core.Pathfinding;
@@ -70,18 +71,24 @@ namespace Gameplay
 
         private async UniTask PreloadAssetsAsync()
         {
-            var essentialAssets = new[]
+            var essentialAssets = new List<string>
             {
                 _mapAssetKey,
                 "WaterTile",
-                "TerrainTile",
+                "WaterBackground",
                 "Rock",
                 "Vegetation"
             };
 
+            // Add terrain tile variants
+            for (int i = 1; i <= 7; i++)
+            {
+                essentialAssets.Add($"TerrainTile{i:00}");
+            }
+
             if (_assetService is AddressableAssetService addressableAssetService)
             {
-                await addressableAssetService.PreloadAssetsAsync(essentialAssets);
+                await addressableAssetService.PreloadAssetsAsync(essentialAssets.ToArray());
             }
         }
 

@@ -16,7 +16,7 @@ MonoBehaviour:
   m_GUID: a5f8a9bdd7e2743429d497933c23fe26
   m_SerializeEntries:
   - m_GUID: 442c2d7cebb8d8d4e905c69037fc0b81
-    m_Address: TerrainTile
+    m_Address: TerrainTile01
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
