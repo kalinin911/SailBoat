@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: fishingtrip-mauritania-prefabs-mauritania_tile_05
+  m_EditorClassIdentifier: 
+  m_GroupName: fishingtrip-mauritania-prefabs-mauritania_tile_05
+  m_GUID: f4574858df173404c8140d32e68b57fa
+  m_SerializeEntries:
+  - m_GUID: 80e59b4df02df28499d0fc2bc4350b26
+    m_Address: Assets/Mauritania/Prefabs/mauritania_tile_05.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: 137eed3201b7d254b93b48f0885bb9a6, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: 4361bd0d6263e6747a32af80fe51ac65, type: 2}
+    - {fileID: 11400000, guid: 9356d5f367925a246a6fa2bd8008326c, type: 2}
