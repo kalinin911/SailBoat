@@ -284,14 +284,14 @@ namespace Infrastructure.Services
                 var rigidbody = item.GetComponent<Rigidbody>();
                 if (rigidbody != null)
                 {
-                    rigidbody.velocity = Vector3.zero;
+                    rigidbody.linearVelocity = Vector3.zero;
                     rigidbody.angularVelocity = Vector3.zero;
                 }
                 
                 var rigidbody2D = item.GetComponent<Rigidbody2D>();
                 if (rigidbody2D != null)
                 {
-                    rigidbody2D.velocity = Vector2.zero;
+                    rigidbody2D.linearVelocity = Vector2.zero;
                     rigidbody2D.angularVelocity = 0f;
                 }
             }

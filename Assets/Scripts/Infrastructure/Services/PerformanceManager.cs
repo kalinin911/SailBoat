@@ -67,7 +67,7 @@ namespace Infrastructure.Services
             QualitySettings.particleRaycastBudget = _maxParticles;
             
             // Texture optimizations
-            QualitySettings.masterTextureLimit = 1; // Half resolution textures
+            QualitySettings.globalTextureMipmapLimit = 1; // Half resolution textures
             
             // Physics optimizations
             Time.fixedDeltaTime = 1.0f / 30.0f; // 30 FPS physics
