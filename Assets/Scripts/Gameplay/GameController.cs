@@ -171,25 +171,10 @@ namespace Gameplay
         public void StartGame()
         {
             _isGameActive = true;
-            Time.timeScale = 1f;
-        }
-
-        public void PauseGame()
-        {
-            //_isGameActive = false;
-            //Time.timeScale = 0f;
-        }
-
-        public void ResumeGame()
-        {
-            _isGameActive = true;
-            Time.timeScale = 1f;
         }
 
         public async UniTask RestartGameAsync()
         {
-            PauseGame();
-
             _isInitialized = false;
             _isGameActive = false;
 
@@ -247,26 +232,6 @@ namespace Gameplay
             if (_assetService is AddressableAssetService addressableAssetService)
             {
                 addressableAssetService.ClearCache();
-            }
-        }
-
-        private void OnApplicationPause(bool pauseStatus)
-        {
-            if (pauseStatus)
-            {
-                PauseGame();
-            }
-            else if (_isInitialized)
-            {
-                ResumeGame();
-            }
-        }
-
-        private void OnApplicationFocus(bool hasFocus)
-        {
-            if (!hasFocus && _isGameActive)
-            {
-                PauseGame();
             }
         }
     }

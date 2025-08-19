@@ -6,7 +6,5 @@ namespace Gameplay
     {
         UniTask InitializeGameAsync();
         void StartGame();
-        void PauseGame();
-        void ResumeGame();
     }
 }
