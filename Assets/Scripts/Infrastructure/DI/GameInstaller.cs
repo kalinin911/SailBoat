@@ -25,6 +25,13 @@ namespace Infrastructure.DI
         [SerializeField] private InputHandler _inputHandler;
         [SerializeField] private GameBootstrap _gameBootstrap;
 
+        [Header("Performance")]
+        [SerializeField] private PerformanceManager _performanceManager;
+
+        [Header("Fallback Settings")]
+        [SerializeField] private bool _createFallbackComponents = true;
+        [SerializeField] private bool _enablePerformanceOptimizations = true;
+
         public override void InstallBindings()
         {
             // Infrastructure Services
@@ -40,30 +47,43 @@ namespace Infrastructure.DI
             Container.Bind<IMapGenerator>().To<MapGenerator>().AsSingle();
             Container.Bind<IGameController>().To<GameController>().FromComponentInHierarchy().AsSingle();
 
-            // Component Bindings - with null checks
+            // Component Bindings
+            BindSceneComponents();
+            
+            // Performance Systems
+            BindPerformanceSystems();
+            
+            // Create fallbacks if needed
+            if (_createFallbackComponents)
+            {
+                CreateMissingComponents();
+            }
+        }
+
+        private void BindSceneComponents()
+        {
+            // Boat controller
             if (_boatController != null)
                 Container.Bind<IBoatController>().FromInstance(_boatController).AsSingle();
-            else
+            else if (_createFallbackComponents)
                 CreateFallbackBoat();
 
+            // Camera controller
             if (_cameraController != null)
                 Container.Bind<ICameraController>().FromInstance(_cameraController).AsSingle();
-            else
-                Debug.LogWarning("CameraController not assigned in GameInstaller");
 
+            // Path renderer
             if (_pathRenderer != null)
                 Container.Bind<IPathRenderer>().FromInstance(_pathRenderer).AsSingle();
-            else
-                Debug.LogWarning("PathRenderer not assigned in GameInstaller");
 
+            // Input handler
             if (_inputHandler != null)
             {
                 Container.Bind<IInputHandler>().FromInstance(_inputHandler).AsSingle();
                 Container.BindInterfacesTo<InputHandler>().FromInstance(_inputHandler).AsSingle();
             }
-            else
-                Debug.LogWarning("InputHandler not assigned in GameInstaller");
 
+            // Main camera
             if (_mainCamera != null)
                 Container.Bind<Camera>().FromInstance(_mainCamera).AsSingle();
             else
@@ -74,15 +94,48 @@ namespace Infrastructure.DI
             }
         }
 
+        private void BindPerformanceSystems()
+        {
+            if (_performanceManager != null)
+            {
+                Container.BindInstance(_performanceManager).AsSingle();
+            }
+            else if (_enablePerformanceOptimizations)
+            {
+                Container.Bind<PerformanceManager>().FromNewComponentOnNewGameObject().AsSingle().NonLazy();
+            }
+        }
+
+        private void CreateMissingComponents()
+        {
+            if (_boatController == null)
+                CreateFallbackBoat();
+        }
+
         private void CreateFallbackBoat()
         {
             Debug.LogWarning("BoatController not assigned, creating fallback boat");
             
             var boatGO = BoatPrefabCreator.CreateFallbackBoat();
             var boatController = boatGO.AddComponent<BoatController>();
+            boatGO.transform.position = Vector3.zero;
             
             Container.Bind<IBoatController>().FromInstance(boatController).AsSingle();
             _boatController = boatController;
+        }
+
+        public override void Start()
+        {
+            base.Start();
+            
+            if (_enablePerformanceOptimizations && Application.isMobilePlatform)
+            {
+                Application.targetFrameRate = 30;
+                QualitySettings.vSyncCount = 0;
+                
+                var performanceManager = Container.TryResolve<PerformanceManager>();
+                performanceManager?.EnableMobileMode(true);
+            }
         }
     }
 }
