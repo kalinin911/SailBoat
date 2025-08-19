@@ -134,8 +134,6 @@ namespace Gameplay
 
             _boatController.SetPosition(_boatStartPosition);
             _cameraController.FollowTarget(_boatController.Transform);
-    
-            Debug.Log("Subscribing to OnHexClicked event");
             _eventManager.OnHexClicked += OnHexClicked;
     
             await UniTask.Delay(100);

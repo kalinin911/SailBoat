@@ -14,9 +14,6 @@ namespace Core.Input
         [SerializeField] private float _doubleTapTime = 0.3f;
         [SerializeField] private float _dragThreshold = 50f;
 
-        [Header("Debug")]
-        [SerializeField] private bool _debugInput = false;
-
         public event Action<Vector3> OnMapClicked;
         public event Action<Vector3> OnMapDoubleClicked;
         public event Action<Vector3, Vector3> OnMapDragged;
@@ -37,11 +34,6 @@ namespace Core.Input
             {
                 _enableMobileInput = true;
                 UnityEngine.Input.multiTouchEnabled = false;
-            }
-
-            if (_debugInput)
-            {
-                Debug.Log($"Input Handler initialized - Mobile: {_enableMobileInput}");
             }
         }
 
@@ -143,10 +135,6 @@ namespace Core.Input
             if (dragDistance > _dragThreshold && !_isDragging)
             {
                 _isDragging = true;
-                if (_debugInput)
-                {
-                    Debug.Log("Drag started");
-                }
             }
 
             _lastTouchPosition = touch.position;
@@ -168,39 +156,17 @@ namespace Core.Input
         private void ProcessClick(Vector2 screenPosition)
         {
             var worldHit = ScreenToWorldHit(screenPosition);
-            Debug.Log($"World hit: {worldHit}");
-    
-            if (!worldHit.HasValue)
-                return;
-
-            var hexCoord = _hexGridManager.WorldToHex(worldHit.Value);
-            Debug.Log($"Hex coord: {hexCoord}");
-    
-            if (_hexGridManager.IsValidHex(hexCoord))
+            if (worldHit.HasValue)
             {
-                Debug.Log($"Valid hex found");
-                var tile = _hexGridManager.GetHexTile(hexCoord);
-                Debug.Log($"Tile: {tile}, Type: {tile?.TileType}, IsWalkable: {tile?.IsWalkable}");
+                var hexCoord = _hexGridManager.WorldToHex(worldHit.Value);
         
-                if (tile != null && tile.IsWalkable)
+                if (_hexGridManager.IsValidHex(hexCoord))
                 {
-                    Debug.Log($"Triggering movement to {hexCoord}");
                     var worldPos = _hexGridManager.HexToWorld(hexCoord);
-            
-                    Debug.Log($"OnMapClicked subscribers: {OnMapClicked?.GetInvocationList()?.Length ?? 0}");
-                    Debug.Log($"EventManager null? {_eventManager == null}");
             
                     OnMapClicked?.Invoke(worldPos);
                     _eventManager.TriggerHexClicked(hexCoord.ToOffset(), worldPos);
                 }
-                else
-                {
-                    Debug.Log($"Tile not walkable");
-                }
-            }
-            else
-            {
-                Debug.Log($"Invalid hex");
             }
         }
 
@@ -210,24 +176,12 @@ namespace Core.Input
             if (worldHit.HasValue)
             {
                 OnMapDoubleClicked?.Invoke(worldHit.Value);
-                
-                if (_debugInput)
-                {
-                    Debug.Log($"Double clicked at: {worldHit.Value}");
-                }
             }
         }
 
         private void ProcessAlternativeClick(Vector2 screenPosition)
         {
             var worldHit = ScreenToWorldHit(screenPosition);
-            if (worldHit.HasValue)
-            {
-                if (_debugInput)
-                {
-                    Debug.Log($"Alternative click at: {worldHit.Value}");
-                }
-            }
         }
 
         private void ProcessDrag(Vector2 startScreen, Vector2 endScreen)
@@ -238,11 +192,6 @@ namespace Core.Input
             if (startWorld.HasValue && endWorld.HasValue)
             {
                 OnMapDragged?.Invoke(startWorld.Value, endWorld.Value);
-                
-                if (_debugInput)
-                {
-                    Debug.Log($"Dragged from {startWorld.Value} to {endWorld.Value}");
-                }
             }
         }
 
@@ -274,33 +223,11 @@ namespace Core.Input
             _enableMobileInput = enable;
         }
 
-        public void SetDebugMode(bool debug)
-        {
-            _debugInput = debug;
-        }
-
         public void Dispose()
         {
             OnMapClicked = null;
             OnMapDoubleClicked = null;
             OnMapDragged = null;
-        }
-
-        private void OnDrawGizmosSelected()
-        {
-            if (_debugInput && _isDragging)
-            {
-                Gizmos.color = Color.red;
-                var startWorld = ScreenToWorldHit(_dragStartPosition);
-                var currentWorld = ScreenToWorldHit(_lastTouchPosition);
-                
-                if (startWorld.HasValue && currentWorld.HasValue)
-                {
-                    Gizmos.DrawLine(startWorld.Value, currentWorld.Value);
-                    Gizmos.DrawWireSphere(startWorld.Value, 0.5f);
-                    Gizmos.DrawWireSphere(currentWorld.Value, 0.5f);
-                }
-            }
         }
     }
 }
