@@ -429,7 +429,6 @@ MonoBehaviour:
   _inputHandler: {fileID: 652715858}
   _gameBootstrap: {fileID: 1936355534}
   _performanceManager: {fileID: 1326436450}
-  _createFallbackComponents: 1
   _enablePerformanceOptimizations: 1
 --- !u!4 &488178174
 Transform:
@@ -929,7 +928,7 @@ GameObject:
   - component: {fileID: 1947214249}
   - component: {fileID: 1947214248}
   m_Layer: 0
-  m_Name: GameManager
+  m_Name: GameController
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -948,8 +947,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _mapAssetKey: DefaultMap
-  _useLoadingScreen: 1
-  _preloadAssets: 1
   _enableAsyncLoading: 1
   _maxTilesPerFrame: 10
 --- !u!4 &1947214249

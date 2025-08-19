@@ -37,7 +37,7 @@ namespace Core.Pathfinding
                     if(!_hexGridManager.IsWalkable(neighbor))
                         continue;
 
-                    var tentativeGScore = gScore[current] + 1f; // Uniform cost
+                    var tentativeGScore = gScore[current] + 1f;
 
                     if (tentativeGScore < gScore.GetValueOrDefault(neighbor, float.MaxValue))
                     {
@@ -49,7 +49,7 @@ namespace Core.Pathfinding
                 }
             }
             
-            return new HexCoordinate[0]; //No path found
+            return new HexCoordinate[0];
         }
 
         public bool HasValidPath(HexCoordinate start, HexCoordinate goal)

@@ -11,7 +11,6 @@ using Infrastructure.Events;
 using Infrastructure.Services;
 using Infrastructure.SceneManagement;
 using Infrastructure.Bootstrap;
-using Infrastructure.UI;
 using Zenject;
 
 namespace Infrastructure.DI
@@ -26,12 +25,10 @@ namespace Infrastructure.DI
         [SerializeField] private InputHandler _inputHandler;
         [SerializeField] private GameBootstrap _gameBootstrap;
 
-        [Header("Performance & UI")]
+        [Header("Performance")]
         [SerializeField] private PerformanceManager _performanceManager;
-        [SerializeField] private LoadingScreenManager _loadingScreenManager;
 
-        [Header("Fallback Settings")]
-        [SerializeField] private bool _createFallbackComponents = true;
+        [Header("Settings")]
         [SerializeField] private bool _enablePerformanceOptimizations = true;
 
         public override void InstallBindings()
@@ -52,56 +49,55 @@ namespace Infrastructure.DI
             // Component Bindings
             BindSceneComponents();
             
-            // Performance & UI Systems
-            BindPerformanceAndUISystems();
+            // Performance Systems
+            BindPerformanceSystems();
             
-            // Object Pool - Create a simple pool for Transform markers
+            // Object Pool
             CreateObjectPools();
-            
-            // Create fallbacks if needed
-            if (_createFallbackComponents)
-            {
-                CreateMissingComponents();
-            }
         }
 
         private void BindSceneComponents()
         {
+            // Validate required components
+            ValidateRequiredComponents();
+
             // Boat controller
-            if (_boatController != null)
-                Container.Bind<IBoatController>().FromInstance(_boatController).AsSingle();
-            else if (_createFallbackComponents)
-                CreateFallbackBoat();
+            Container.Bind<IBoatController>().FromInstance(_boatController).AsSingle();
 
             // Camera controller
-            if (_cameraController != null)
-                Container.Bind<ICameraController>().FromInstance(_cameraController).AsSingle();
+            Container.Bind<ICameraController>().FromInstance(_cameraController).AsSingle();
 
-            // Enhanced path renderer
-            if (_pathRenderer != null)
-                Container.Bind<IPathRenderer>().FromInstance(_pathRenderer).AsSingle();
+            // Path renderer
+            Container.Bind<IPathRenderer>().FromInstance(_pathRenderer).AsSingle();
 
-            // Enhanced input handler
-            if (_inputHandler != null)
-            {
-                Container.Bind<IInputHandler>().FromInstance(_inputHandler).AsSingle();
-                Container.BindInterfacesTo<InputHandler>().FromInstance(_inputHandler).AsSingle();
-            }
+            // Input handler
+            Container.Bind<IInputHandler>().FromInstance(_inputHandler).AsSingle();
+            Container.BindInterfacesTo<InputHandler>().FromInstance(_inputHandler).AsSingle();
 
             // Main camera
-            if (_mainCamera != null)
-                Container.Bind<Camera>().FromInstance(_mainCamera).AsSingle();
-            else
-            {
-                var fallbackCamera = Camera.main ?? FindObjectOfType<Camera>();
-                if (fallbackCamera != null)
-                    Container.Bind<Camera>().FromInstance(fallbackCamera).AsSingle();
-            }
+            Container.Bind<Camera>().FromInstance(_mainCamera).AsSingle();
         }
 
-        private void BindPerformanceAndUISystems()
+        private void ValidateRequiredComponents()
         {
-            // Performance manager
+            if (_boatController == null)
+                throw new System.InvalidOperationException("BoatController is required but not assigned in GameInstaller");
+            
+            if (_cameraController == null)
+                throw new System.InvalidOperationException("CameraController is required but not assigned in GameInstaller");
+            
+            if (_pathRenderer == null)
+                throw new System.InvalidOperationException("PathRenderer is required but not assigned in GameInstaller");
+            
+            if (_inputHandler == null)
+                throw new System.InvalidOperationException("InputHandler is required but not assigned in GameInstaller");
+            
+            if (_mainCamera == null)
+                throw new System.InvalidOperationException("Main Camera is required but not assigned in GameInstaller");
+        }
+
+        private void BindPerformanceSystems()
+        {
             if (_performanceManager != null)
             {
                 Container.BindInstance(_performanceManager).AsSingle();
@@ -110,26 +106,10 @@ namespace Infrastructure.DI
             {
                 Container.Bind<PerformanceManager>().FromNewComponentOnNewGameObject().AsSingle().NonLazy();
             }
-
-            // Loading screen manager - Create simple version without UI dependencies
-            if (_loadingScreenManager != null)
-            {
-                Container.BindInstance(_loadingScreenManager).AsSingle();
-            }
-            else
-            {
-                // Create a simple loading screen manager without UI components
-                var loadingScreenGO = new GameObject("LoadingScreenManager");
-                var loadingScreenManager = loadingScreenGO.AddComponent<LoadingScreenManager>();
-                Container.BindInstance(loadingScreenManager).AsSingle();
-                _loadingScreenManager = loadingScreenManager;
-                Debug.Log("Created simple LoadingScreenManager without UI dependencies");
-            }
         }
 
         private void CreateObjectPools()
         {
-            // Create a simple marker pool for the path renderer
             var markerPoolParent = new GameObject("MarkerPool").transform;
             
             // Create a simple Transform prefab for markers
@@ -144,53 +124,6 @@ namespace Infrastructure.DI
             );
             
             Container.Bind<IObjectPool<Transform>>().FromInstance(markerPool).AsSingle();
-        }
-
-        private void CreateMissingComponents()
-        {
-            if (_boatController == null)
-                CreateFallbackBoat();
-            
-            if (_pathRenderer == null)
-                CreateFallbackPathRenderer();
-                
-            if (_inputHandler == null)
-                CreateFallbackInputHandler();
-        }
-
-        private void CreateFallbackBoat()
-        {
-            Debug.LogWarning("BoatController not assigned, creating fallback boat");
-            
-            var boatGO = BoatPrefabCreator.CreateFallbackBoat();
-            var boatController = boatGO.AddComponent<BoatController>();
-            boatGO.transform.position = Vector3.zero;
-            
-            Container.Bind<IBoatController>().FromInstance(boatController).AsSingle();
-            _boatController = boatController;
-        }
-
-        private void CreateFallbackPathRenderer()
-        {
-            Debug.LogWarning("EnhancedPathRenderer not assigned, creating fallback");
-            
-            var pathRendererGO = new GameObject("EnhancedPathRenderer (Fallback)");
-            var pathRenderer = pathRendererGO.AddComponent<PathRenderer>();
-            
-            Container.Bind<IPathRenderer>().FromInstance(pathRenderer).AsSingle();
-            _pathRenderer = pathRenderer;
-        }
-
-        private void CreateFallbackInputHandler()
-        {
-            Debug.LogWarning("EnhancedInputHandler not assigned, creating fallback");
-            
-            var inputHandlerGO = new GameObject("EnhancedInputHandler (Fallback)");
-            var inputHandler = inputHandlerGO.AddComponent<InputHandler>();
-            
-            Container.Bind<IInputHandler>().FromInstance(inputHandler).AsSingle();
-            Container.BindInterfacesTo<InputHandler>().FromInstance(inputHandler).AsSingle();
-            _inputHandler = inputHandler;
         }
 
         public override void Start()

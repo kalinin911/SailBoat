@@ -25,7 +25,6 @@ namespace Core.Input
         [Inject] private IGameEventManager _eventManager;
         [Inject] private UnityEngine.Camera _mainCamera;
 
-        // Touch handling variables
         private float _lastTapTime;
         private Vector3 _lastTapPosition;
         private bool _isDragging;
@@ -34,11 +33,10 @@ namespace Core.Input
 
         public void Initialize()
         {
-            // Initialize input settings
             if (Application.isMobilePlatform)
             {
                 _enableMobileInput = true;
-                UnityEngine.Input.multiTouchEnabled = false; // Disable multitouch for simplicity
+                UnityEngine.Input.multiTouchEnabled = false;
             }
 
             if (_debugInput)
@@ -61,19 +59,16 @@ namespace Core.Input
 
         private void HandleDesktopInput()
         {
-            // Left mouse button click
             if (UnityEngine.Input.GetMouseButtonDown(0))
             {
                 ProcessClick(UnityEngine.Input.mousePosition);
             }
 
-            // Right mouse button for alternative action
             if (UnityEngine.Input.GetMouseButtonDown(1))
             {
                 ProcessAlternativeClick(UnityEngine.Input.mousePosition);
             }
 
-            // Mouse drag
             if (UnityEngine.Input.GetMouseButtonDown(0))
             {
                 _isDragging = false;
@@ -129,7 +124,6 @@ namespace Core.Input
             _dragStartPosition = touch.position;
             _isDragging = false;
 
-            // Check for double tap
             float timeSinceLastTap = Time.time - _lastTapTime;
             float distanceFromLastTap = Vector2.Distance(touch.position, _lastTapPosition);
 
@@ -167,7 +161,6 @@ namespace Core.Input
             }
             else
             {
-                // Simple tap
                 ProcessClick(touch.position);
             }
         }
@@ -213,7 +206,6 @@ namespace Core.Input
             var worldHit = ScreenToWorldHit(screenPosition);
             if (worldHit.HasValue)
             {
-                // Could be used for showing hex info, context menu, etc.
                 if (_debugInput)
                 {
                     Debug.Log($"Alternative click at: {worldHit.Value}");
@@ -246,7 +238,6 @@ namespace Core.Input
                 return hit.point;
             }
 
-            // Fallback: raycast to Y=0 plane
             var plane = new Plane(Vector3.up, Vector3.zero);
             if (plane.Raycast(ray, out var distance))
             {

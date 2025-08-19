@@ -43,24 +43,15 @@ namespace Infrastructure.Services
 
         private async UniTask InitializeAddressables()
         {
-            try
-            {
-                var initHandle = Addressables.InitializeAsync();
-                await initHandle.ToUniTask();
-                Debug.Log("Addressables initialized");
-            }
-            catch (System.Exception ex)
-            {
-                Debug.LogError($"Failed to initialize Addressables: {ex.Message}");
-            }
+            var initHandle = Addressables.InitializeAsync();
+            await initHandle.ToUniTask();
         }
 
         public async UniTask<T> LoadAssetAsync<T>(string key) where T : Object
         {
             if (string.IsNullOrEmpty(key))
             {
-                Debug.LogError("Asset key is null or empty");
-                return null;
+                throw new System.ArgumentException("Asset key cannot be null or empty");
             }
 
             // Check cache first
@@ -80,27 +71,18 @@ namespace Infrastructure.Services
                 }
             }
 
-            try
-            {
-                var handle = Addressables.LoadAssetAsync<T>(key);
-                _loadedAssets[key] = handle;
+            var handle = Addressables.LoadAssetAsync<T>(key);
+            _loadedAssets[key] = handle;
 
-                var result = await handle.ToUniTask();
-                
-                if (result == null)
-                {
-                    Debug.LogWarning($"Failed to load asset with key: {key}");
-                    return await LoadFromResourcesAsync<T>(key);
-                }
-
-                _cachedAssets[key] = result;
-                return result;
-            }
-            catch (System.Exception ex)
+            var result = await handle.ToUniTask();
+            
+            if (result == null)
             {
-                Debug.LogError($"Error loading asset {key}: {ex.Message}");
-                return await LoadFromResourcesAsync<T>(key);
+                throw new System.InvalidOperationException($"Failed to load asset with key: {key}");
             }
+
+            _cachedAssets[key] = result;
+            return result;
         }
 
         public async UniTask<T[]> LoadAssetsAsync<T>(string[] keys) where T : Object
@@ -181,47 +163,6 @@ namespace Infrastructure.Services
             });
         }
 
-        private async UniTask<T> LoadFromResourcesAsync<T>(string key) where T : Object
-        {
-            try
-            {
-                // Try different possible paths in Resources
-                var possiblePaths = new[]
-                {
-                    key,
-                    $"Prefabs/{key}",
-                    $"Maps/{key}",
-                    $"Materials/{key}",
-                    $"Textures/{key}"
-                };
-
-                foreach (var path in possiblePaths)
-                {
-                    var resourceRequest = Resources.LoadAsync<T>(path);
-                    await resourceRequest.ToUniTask();
-                    
-                    if (resourceRequest.asset != null)
-                    {
-                        var asset = resourceRequest.asset as T;
-                        if (asset != null)
-                        {
-                            _cachedAssets[key] = asset;
-                            Debug.Log($"Loaded {key} from Resources at path: {path}");
-                            return asset;
-                        }
-                    }
-                }
-                
-                Debug.LogWarning($"Asset {key} not found in Resources");
-                return null;
-            }
-            catch (System.Exception ex)
-            {
-                Debug.LogError($"Failed to load from Resources: {key}, Error: {ex.Message}");
-                return null;
-            }
-        }
-
         public bool IsAssetLoaded(string key)
         {
             return _cachedAssets.ContainsKey(key) || _loadedAssets.ContainsKey(key);
@@ -240,17 +181,9 @@ namespace Infrastructure.Services
         {
             if (_loadedAssets.TryGetValue(key, out var handle))
             {
-                try
-                {
-                    Addressables.Release(handle);
-                    _loadedAssets.Remove(key);
-                    _cachedAssets.Remove(key);
-                    Debug.Log($"Released asset: {key}");
-                }
-                catch (System.Exception ex)
-                {
-                    Debug.LogError($"Error releasing asset {key}: {ex.Message}");
-                }
+                Addressables.Release(handle);
+                _loadedAssets.Remove(key);
+                _cachedAssets.Remove(key);
             }
         }
 
@@ -281,7 +214,6 @@ namespace Infrastructure.Services
             _loadedAssets.Clear();
             _cachedAssets.Clear();
             
-            // Force garbage collection after releasing assets
             System.GC.Collect();
             Debug.Log("All assets released");
         }
@@ -296,12 +228,10 @@ namespace Infrastructure.Services
             _preloadGroups.RemoveAll(g => g.groupName == groupName);
         }
 
-        // Memory management
         public void ClearCache()
         {
             _cachedAssets.Clear();
             System.GC.Collect();
-            Debug.Log("Asset cache cleared");
         }
 
         public long GetCacheMemoryUsage()
@@ -312,31 +242,21 @@ namespace Infrastructure.Services
             {
                 if (asset is Texture2D texture)
                 {
-                    totalSize += texture.width * texture.height * 4; // Approximate RGBA size
+                    totalSize += texture.width * texture.height * 4;
                 }
                 else if (asset is Mesh mesh)
                 {
-                    totalSize += mesh.vertexCount * 32; // Approximate vertex data size
+                    totalSize += mesh.vertexCount * 32;
                 }
                 else if (asset is AudioClip audio)
                 {
-                    totalSize += audio.samples * audio.channels * 2; // 16-bit audio
+                    totalSize += audio.samples * audio.channels * 2;
                 }
-                // Add more asset types as needed
             }
             
             return totalSize;
         }
 
-        public void LogCacheStatus()
-        {
-            Debug.Log($"Asset Cache Status:");
-            Debug.Log($"- Cached Assets: {_cachedAssets.Count}");
-            Debug.Log($"- Loaded Handles: {_loadedAssets.Count}");
-            Debug.Log($"- Memory Usage: {GetCacheMemoryUsage() / 1024 / 1024:F2} MB");
-        }
-
-        // Async resource monitoring
         public async UniTask<bool> WaitForAssetAsync(string key, float timeout = 10f)
         {
             var startTime = Time.time;
@@ -349,20 +269,26 @@ namespace Infrastructure.Services
                     return false;
                 }
                 
-                await UniTask.Delay(100); // Check every 100ms
+                await UniTask.Delay(100);
             }
             
             return true;
         }
 
-        // Batch operations
         public async UniTask<Dictionary<string, T>> LoadAssetBatchAsync<T>(string[] keys) where T : Object
         {
             var results = new Dictionary<string, T>();
             var tasks = keys.Select(async key =>
             {
-                var asset = await LoadAssetAsync<T>(key);
-                return new { Key = key, Asset = asset };
+                try
+                {
+                    var asset = await LoadAssetAsync<T>(key);
+                    return new { Key = key, Asset = asset };
+                }
+                catch
+                {
+                    return new { Key = key, Asset = (T)null };
+                }
             });
 
             var loadResults = await UniTask.WhenAll(tasks);

@@ -24,44 +24,14 @@ namespace Gameplay.Map
 
         public async UniTask<HexTile[,]> GenerateMapAsync(string mapAssetKey)
         {
-            try
-            {
-                // Try to load map text asset
-                var mapTextAsset = await _assetService.LoadAssetAsync<TextAsset>(mapAssetKey);
-                
-                if (mapTextAsset == null)
-                {
-                    Debug.LogWarning($"Could not load map asset {mapAssetKey}, generating default map");
-                    return await GenerateDefaultMapAsync();
-                }
-
-                var mapData = ParseMapData(mapTextAsset.text);
-                return await CreateTilesFromDataAsync(mapData);
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError($"Error generating map: {ex.Message}");
-                return await GenerateDefaultMapAsync();
-            }
-        }
-
-        private async UniTask<HexTile[,]> GenerateDefaultMapAsync()
-        {
-            // Create a simple 8x8 map with water around edges
-            var mapData = new int[8, 8];
+            var mapTextAsset = await _assetService.LoadAssetAsync<TextAsset>(mapAssetKey);
             
-            for (int x = 0; x < 8; x++)
+            if (mapTextAsset == null)
             {
-                for (int y = 0; y < 8; y++)
-                {
-                    // Water on edges, terrain in middle
-                    if (x == 0 || x == 7 || y == 0 || y == 7)
-                        mapData[x, y] = 0; // Water
-                    else
-                        mapData[x, y] = 1; // Terrain
-                }
+                throw new InvalidOperationException($"Could not load map asset: {mapAssetKey}");
             }
-            
+
+            var mapData = ParseMapData(mapTextAsset.text);
             return await CreateTilesFromDataAsync(mapData);
         }
 
@@ -91,14 +61,7 @@ namespace Gameplay.Map
             var worldPos = _hexGridManager.HexToWorld(hexCoord);
             var tileType = (TileType)tileValue;
 
-            GameObject tileObj = await CreateTileGameObjectAsync(tileType);
-            
-            if (tileObj == null)
-            {
-                // Create simple cube as fallback
-                tileObj = CreateFallbackTile(tileType);
-            }
-
+            var tileObj = await CreateTileGameObjectAsync(tileType);
             tileObj.transform.position = worldPos;
             
             var hexTile = tileObj.GetComponent<HexTile>();
@@ -115,35 +78,13 @@ namespace Gameplay.Map
         {
             string prefabKey = tileType == TileType.Water ? "WaterTile" : "TerrainTile";
             
-            try
+            var tilePrefab = await _assetService.LoadAssetAsync<GameObject>(prefabKey);
+            if (tilePrefab == null)
             {
-                var tilePrefab = await _assetService.LoadAssetAsync<GameObject>(prefabKey);
-                if (tilePrefab != null)
-                {
-                    return _container.InstantiatePrefab(tilePrefab);
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.LogWarning($"Could not load prefab {prefabKey}: {ex.Message}");
+                throw new InvalidOperationException($"Could not load tile prefab: {prefabKey}");
             }
             
-            return null;
-        }
-
-        private GameObject CreateFallbackTile(TileType tileType)
-        {
-            var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            cube.transform.localScale = new Vector3(0.9f, 0.1f, 0.9f);
-            
-            var renderer = cube.GetComponent<Renderer>();
-            if (renderer != null)
-            {
-                renderer.material.color = tileType == TileType.Water ? Color.blue : Color.gray;
-            }
-            
-            cube.name = $"{tileType}Tile_Fallback";
-            return cube;
+            return _container.InstantiatePrefab(tilePrefab);
         }
 
         public void AddRandomVegetationAndRocks(HexTile[,] tiles)
@@ -169,101 +110,46 @@ namespace Gameplay.Map
             string[] obstacleKeys = { "Rock", "Vegetation" };
             var randomKey = obstacleKeys[UnityEngine.Random.Range(0, obstacleKeys.Length)];
             
-            try
-            {
-                var obstaclePrefab = await _assetService.LoadAssetAsync<GameObject>(randomKey);
-                
-                if (obstaclePrefab != null)
-                {
-                    var obstacleObj = _container.InstantiatePrefab(obstaclePrefab);
-                    obstacleObj.transform.position = tile.transform.position + Vector3.up * 0.1f;
-                    obstacleObj.transform.SetParent(tile.transform);
-                }
-                else
-                {
-                    // Create fallback obstacle
-                    CreateFallbackObstacle(tile, randomKey);
-                }
-                
-                tile.SetObstacle(true);
-            }
-            catch (Exception ex)
-            {
-                Debug.LogWarning($"Could not create obstacle {randomKey}: {ex.Message}");
-                CreateFallbackObstacle(tile, randomKey);
-                tile.SetObstacle(true);
-            }
-        }
-
-        private void CreateFallbackObstacle(HexTile tile, string obstacleType)
-        {
-            var obstacle = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            obstacle.transform.position = tile.transform.position + Vector3.up * 0.2f;
-            obstacle.transform.localScale = Vector3.one * 0.3f;
-            obstacle.transform.SetParent(tile.transform);
+            var obstaclePrefab = await _assetService.LoadAssetAsync<GameObject>(randomKey);
             
-            var renderer = obstacle.GetComponent<Renderer>();
-            if (renderer != null)
+            if (obstaclePrefab == null)
             {
-                renderer.material.color = obstacleType == "Rock" ? Color.gray : Color.green;
+                Debug.LogWarning($"Could not load obstacle prefab: {randomKey}");
+                return;
             }
             
-            obstacle.name = $"{obstacleType}_Fallback";
+            var obstacleObj = _container.InstantiatePrefab(obstaclePrefab);
+            obstacleObj.transform.position = tile.transform.position + Vector3.up * 0.1f;
+            obstacleObj.transform.SetParent(tile.transform);
+            
+            tile.SetObstacle(true);
         }
 
         private int[,] ParseMapData(string mapText)
         {
-            try
+            var lines = mapText.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+            var height = lines.Length;
+            var width = lines[0].Length;
+
+            var mapData = new int[width, height];
+
+            for (int y = 0; y < height; y++)
             {
-                var lines = mapText.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-                var height = lines.Length;
-                var width = lines[0].Length; // Each character is a tile value
-        
-                Debug.Log($"Parsing map: {width}x{height} tiles");
-        
-                var mapData = new int[width, height];
-        
-                for (int y = 0; y < height; y++)
+                var line = lines[y].Trim();
+                for (int x = 0; x < width && x < line.Length; x++)
                 {
-                    var line = lines[y].Trim(); // Remove any whitespace
-                    for (int x = 0; x < width && x < line.Length; x++)
+                    if (char.IsDigit(line[x]))
                     {
-                        if (char.IsDigit(line[x]))
-                        {
-                            mapData[x, y] = line[x] - '0'; // Convert char '0'/'1' to int 0/1
-                        }
-                        else
-                        {
-                            mapData[x, y] = 0; // Default to water for invalid chars
-                        }
+                        mapData[x, y] = line[x] - '0';
+                    }
+                    else
+                    {
+                        mapData[x, y] = 0; // Default to water for invalid chars
                     }
                 }
-        
-                // Verify parsing worked
-                int waterCount = 0, terrainCount = 0;
-                for (int x = 0; x < width; x++)
-                {
-                    for (int y = 0; y < height; y++)
-                    {
-                        if (mapData[x, y] == 0) waterCount++;
-                        else terrainCount++;
-                    }
-                }
-        
-                Debug.Log($"Map parsed successfully: {waterCount} water, {terrainCount} terrain tiles");
-        
-                if (terrainCount == 0)
-                {
-                    Debug.LogError("NO TERRAIN TILES FOUND! Check your map file format.");
-                }
-        
-                return mapData;
             }
-            catch (System.Exception ex)
-            {
-                Debug.LogError($"Error parsing map data: {ex.Message}");
-                throw;
-            }
+
+            return mapData;
         }
     }
 }
