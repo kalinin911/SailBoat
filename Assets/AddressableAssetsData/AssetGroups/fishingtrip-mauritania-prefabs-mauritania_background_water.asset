@@ -16,7 +16,7 @@ MonoBehaviour:
   m_GUID: 58579bc916b59d24c907b8947e8cad85
   m_SerializeEntries:
   - m_GUID: 9c2b714c05be4b44fb64bc60e69eba3e
-    m_Address: Assets/Mauritania/Prefabs/mauritania_background_water.prefab
+    m_Address: WaterBackground
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
