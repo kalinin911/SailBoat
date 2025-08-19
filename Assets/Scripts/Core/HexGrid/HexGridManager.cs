@@ -6,7 +6,7 @@ namespace Core.HexGrid
     public class HexGridManager : IHexGridManager
     {
         private readonly Dictionary<HexCoordinate, HexTile> _hexTiles = new();
-        private float _hexSize = 1f;
+        private float _hexSize = 0.6f;
         
         public HexCoordinate WorldToHex(Vector3 worldPosition)
         {

@@ -16,7 +16,7 @@ MonoBehaviour:
   m_GUID: c0ca0ac3faa2e7346ba289d296e970e6
   m_SerializeEntries:
   - m_GUID: 065ca11cbaa4b41a9852394849b09289
-    m_Address: Assets/Mauritania/Maps/map1.txt
+    m_Address: DefaultMap_1
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

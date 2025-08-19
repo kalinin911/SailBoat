@@ -217,29 +217,49 @@ namespace Gameplay.Map
             {
                 var lines = mapText.Split('\n', StringSplitOptions.RemoveEmptyEntries);
                 var height = lines.Length;
-                var width = lines[0].Split(' ', StringSplitOptions.RemoveEmptyEntries).Length;
-                
+                var width = lines[0].Length; // Each character is a tile value
+        
+                Debug.Log($"Parsing map: {width}x{height} tiles");
+        
                 var mapData = new int[width, height];
-                
+        
                 for (int y = 0; y < height; y++)
                 {
-                    var values = lines[y].Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                    for (int x = 0; x < width && x < values.Length; x++)
+                    var line = lines[y].Trim(); // Remove any whitespace
+                    for (int x = 0; x < width && x < line.Length; x++)
                     {
-                        if (int.TryParse(values[x], out var value))
+                        if (char.IsDigit(line[x]))
                         {
-                            mapData[x, y] = value;
+                            mapData[x, y] = line[x] - '0'; // Convert char '0'/'1' to int 0/1
                         }
                         else
                         {
-                            mapData[x, y] = 0; // Default to water
+                            mapData[x, y] = 0; // Default to water for invalid chars
                         }
                     }
                 }
-                
+        
+                // Verify parsing worked
+                int waterCount = 0, terrainCount = 0;
+                for (int x = 0; x < width; x++)
+                {
+                    for (int y = 0; y < height; y++)
+                    {
+                        if (mapData[x, y] == 0) waterCount++;
+                        else terrainCount++;
+                    }
+                }
+        
+                Debug.Log($"Map parsed successfully: {waterCount} water, {terrainCount} terrain tiles");
+        
+                if (terrainCount == 0)
+                {
+                    Debug.LogError("NO TERRAIN TILES FOUND! Check your map file format.");
+                }
+        
                 return mapData;
             }
-            catch (Exception ex)
+            catch (System.Exception ex)
             {
                 Debug.LogError($"Error parsing map data: {ex.Message}");
                 throw;

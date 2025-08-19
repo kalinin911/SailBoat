@@ -36,8 +36,8 @@ namespace Core.HexGrid
 
         public Vector3 ToWorldPosition(float hexSize = 1f)
         {
-            var x = hexSize * (3f / 2f * Q); //Horizontal spacing (hexes are 3/2 width apart)
-            var z = hexSize * (Mathf.Sqrt(3f) / 2f * Q + Mathf.Sqrt(3f) * R); //Vertical spacing with hex geometry
+            var x = hexSize * (Mathf.Sqrt(3f) * Q + Mathf.Sqrt(3f) / 2f * R);
+            var z = hexSize * (3f / 2f * R);
             return new Vector3(x, 0f, z);
         }
 
