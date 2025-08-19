@@ -168,22 +168,39 @@ namespace Core.Input
         private void ProcessClick(Vector2 screenPosition)
         {
             var worldHit = ScreenToWorldHit(screenPosition);
-            if (worldHit.HasValue)
+            Debug.Log($"World hit: {worldHit}");
+    
+            if (!worldHit.HasValue)
+                return;
+
+            var hexCoord = _hexGridManager.WorldToHex(worldHit.Value);
+            Debug.Log($"Hex coord: {hexCoord}");
+    
+            if (_hexGridManager.IsValidHex(hexCoord))
             {
-                var hexCoord = _hexGridManager.WorldToHex(worldHit.Value);
-                
-                if (_hexGridManager.IsValidHex(hexCoord))
+                Debug.Log($"Valid hex found");
+                var tile = _hexGridManager.GetHexTile(hexCoord);
+                Debug.Log($"Tile: {tile}, Type: {tile?.TileType}, IsWalkable: {tile?.IsWalkable}");
+        
+                if (tile != null && tile.IsWalkable)
                 {
+                    Debug.Log($"Triggering movement to {hexCoord}");
                     var worldPos = _hexGridManager.HexToWorld(hexCoord);
-                    
+            
+                    Debug.Log($"OnMapClicked subscribers: {OnMapClicked?.GetInvocationList()?.Length ?? 0}");
+                    Debug.Log($"EventManager null? {_eventManager == null}");
+            
                     OnMapClicked?.Invoke(worldPos);
                     _eventManager.TriggerHexClicked(hexCoord.ToOffset(), worldPos);
-
-                    if (_debugInput)
-                    {
-                        Debug.Log($"Clicked hex: {hexCoord} at world pos: {worldPos}");
-                    }
                 }
+                else
+                {
+                    Debug.Log($"Tile not walkable");
+                }
+            }
+            else
+            {
+                Debug.Log($"Invalid hex");
             }
         }
 

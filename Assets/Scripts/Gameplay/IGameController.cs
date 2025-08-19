@@ -5,6 +5,5 @@ namespace Gameplay
     public interface IGameController
     {
         UniTask InitializeGameAsync();
-        void StartGame();
     }
 }

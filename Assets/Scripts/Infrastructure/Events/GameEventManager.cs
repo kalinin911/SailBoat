@@ -13,6 +13,7 @@ namespace Infrastructure.Events
         
         public void TriggerHexClicked(Vector2Int hexCoordinate, Vector3 worldPosition)
         {
+            Debug.Log($"GameEventManager.TriggerHexClicked called: {hexCoordinate}, subscribers: {OnHexClicked?.GetInvocationList()?.Length ?? 0}");
             OnHexClicked?.Invoke(hexCoordinate, worldPosition);
         }
 

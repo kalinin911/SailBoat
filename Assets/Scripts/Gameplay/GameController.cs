@@ -29,13 +29,14 @@ namespace Gameplay
         [Inject] private IGameEventManager _eventManager;
         [Inject] private IAssetService _assetService;
         [Inject(Optional = true)] private PerformanceManager _performanceManager;
-
-        private bool _isGameActive;
+        
         private bool _isInitialized;
 
         private void Start()
         {
             InitializeGameAsync().Forget();
+            
+            _eventManager.OnHexClicked += OnHexClicked;
         }
 
         public async UniTask InitializeGameAsync()
@@ -133,14 +134,15 @@ namespace Gameplay
 
             _boatController.SetPosition(_boatStartPosition);
             _cameraController.FollowTarget(_boatController.Transform);
+    
+            Debug.Log("Subscribing to OnHexClicked event");
             _eventManager.OnHexClicked += OnHexClicked;
-            
+    
             await UniTask.Delay(100);
         }
 
         private async UniTask FinalizeInitializationAsync()
         {
-            StartGame();
             System.GC.Collect();
             await UniTask.Delay(100);
         }
@@ -168,47 +170,29 @@ namespace Gameplay
             return new HexCoordinate(0, 0);
         }
 
-        public void StartGame()
-        {
-            _isGameActive = true;
-        }
-
-        public async UniTask RestartGameAsync()
-        {
-            _isInitialized = false;
-            _isGameActive = false;
-
-            if (_assetService is AddressableAssetService addressableAssetService)
-            {
-                addressableAssetService.ClearCache();
-            }
-
-            System.GC.Collect();
-            await UniTask.Delay(500);
-
-            await InitializeGameAsync();
-        }
-
         private void OnHexClicked(Vector2Int hexOffset, Vector3 worldPosition)
         {
-            if (!_isGameActive || _boatController.IsMoving)
+            Debug.Log($"OnHexClicked: offset={hexOffset}, world={worldPosition}, boatMoving={_boatController.IsMoving}");
+    
+            if (_boatController.IsMoving)
                 return;
 
             var targetHex = HexCoordinate.FromOffset(hexOffset.x, hexOffset.y);
-            
+            Debug.Log($"Target hex: {targetHex}, walkable: {_hexGridManager.IsWalkable(targetHex)}");
+    
             if (!_hexGridManager.IsWalkable(targetHex))
                 return;
 
             var path = _pathfinder.FindPath(_boatController.CurrentHex, targetHex);
-            
+            Debug.Log($"Path found: {path.Length} steps, boat at: {_boatController.CurrentHex}");
+    
             if (path.Length > 0)
             {
                 _eventManager.TriggerPathCalculated(path);
                 _boatController.MoveToAsync(path).Forget();
             }
         }
-
-        public bool IsGameActive => _isGameActive;
+        
         public bool IsInitialized => _isInitialized;
         public HexCoordinate BoatPosition => _boatController.CurrentHex;
 
