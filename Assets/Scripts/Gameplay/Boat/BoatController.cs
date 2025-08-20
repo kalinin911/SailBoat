@@ -1,5 +1,5 @@
-﻿using System.Linq;
-using Cysharp.Threading.Tasks;
+﻿using System.Collections;
+using System.Linq;
 using UnityEngine;
 using Core.HexGrid;
 using Infrastructure.Events;
@@ -19,81 +19,149 @@ namespace Gameplay.Boat
         public HexCoordinate CurrentHex { get; private set; }
         public bool IsMoving { get; private set; }
 
-        public async UniTask MoveToAsync(HexCoordinate[] path)
+        private Coroutine _currentMovement;
+
+        public void MoveTo(HexCoordinate[] path)
         {
-            if (path.Length == 0 || IsMoving)
-                return;
+            if (path == null || path.Length == 0) return;
 
+            // Stop current movement
+            if (_currentMovement != null)
+            {
+                StopCoroutine(_currentMovement);
+                IsMoving = false;
+            }
+
+            // Start new movement
+            _currentMovement = StartCoroutine(MoveAlongPath(path));
+        }
+
+        private IEnumerator MoveAlongPath(HexCoordinate[] path)
+        {
             IsMoving = true;
-            var worldPath = path.Select(hex => _hexGridManager.HexToWorld(hex)).ToArray();
-            
-            _eventManager.TriggerBoatMovementStarted(worldPath);
 
+            // Trigger start event
+            try
+            {
+                if (_eventManager != null && _hexGridManager != null)
+                {
+                    var worldPath = path.Select(hex => _hexGridManager.HexToWorld(hex)).ToArray();
+                    _eventManager.TriggerBoatMovementStarted(worldPath);
+                }
+            }
+            catch { }
+
+            // Move through each point
             for (int i = 1; i < path.Length; i++)
             {
+                if (_hexGridManager == null) break;
+
                 var targetHex = path[i];
-                var targetWorldPos = _hexGridManager.HexToWorld(targetHex);
-                
-                await MoveToPositionAsync(targetWorldPos);
+                var targetPos = _hexGridManager.HexToWorld(targetHex);
+
+                yield return StartCoroutine(MoveToPosition(targetPos));
                 CurrentHex = targetHex;
             }
 
+            // Complete movement
             IsMoving = false;
-            _eventManager.TriggerBoatMovementCompleted(transform.position);
+            _currentMovement = null;
+
+            try
+            {
+                _eventManager?.TriggerBoatMovementCompleted(transform.position);
+            }
+            catch { }
         }
 
-        private async UniTask MoveToPositionAsync(Vector3 targetPosition)
+        private IEnumerator MoveToPosition(Vector3 targetPos)
         {
-            var startPosition = transform.position;
-            var direction = (targetPosition - startPosition).normalized;
-            
-            // Rotate towards target
+            var startPos = transform.position;
+            var direction = (targetPos - startPos).normalized;
+
+            // Rotate
             if (direction != Vector3.zero)
             {
-                var targetRotation = Quaternion.LookRotation(direction);
-                var startRotation = transform.rotation;
-                
-                var rotationTime = 0f;
-                var rotationDuration = Quaternion.Angle(startRotation, targetRotation) / _rotationSpeed;
-                
-                while (rotationTime < rotationDuration)
+                var targetRot = Quaternion.LookRotation(direction);
+                var startRot = transform.rotation;
+                var rotTime = 0f;
+                var rotDuration = Quaternion.Angle(startRot, targetRot) / _rotationSpeed;
+
+                while (rotTime < rotDuration)
                 {
-                    rotationTime += Time.deltaTime;
-                    var t = rotationTime / rotationDuration;
-                    transform.rotation = Quaternion.Lerp(startRotation, targetRotation, t);
-                    await UniTask.NextFrame();
+                    rotTime += Time.deltaTime;
+                    var t = rotTime / rotDuration;
+                    transform.rotation = Quaternion.Lerp(startRot, targetRot, t);
+                    yield return null;
                 }
-                
-                transform.rotation = targetRotation;
+                transform.rotation = targetRot;
             }
 
-            // Move to target
+            // Move
             var moveTime = 0f;
-            var distance = Vector3.Distance(startPosition, targetPosition);
+            var distance = Vector3.Distance(startPos, targetPos);
             var moveDuration = distance / _moveSpeed;
 
             while (moveTime < moveDuration)
             {
                 moveTime += Time.deltaTime;
                 var t = moveTime / moveDuration;
-                transform.position = Vector3.Lerp(startPosition, targetPosition, t);
-                await UniTask.NextFrame();
+                transform.position = Vector3.Lerp(startPos, targetPos, t);
+                yield return null;
             }
+            transform.position = targetPos;
+        }
 
-            transform.position = targetPosition;
+        public void CancelCurrentMovement()
+        {
+            if (_currentMovement != null)
+            {
+                StopCoroutine(_currentMovement);
+                _currentMovement = null;
+                IsMoving = false;
+            }
+        }
+
+        public HexCoordinate GetCurrentHexFromPosition()
+        {
+            if (_hexGridManager != null)
+                return _hexGridManager.WorldToHex(transform.position);
+            return CurrentHex;
+        }
+
+        public void UpdateCurrentHex(HexCoordinate hex)
+        {
+            CurrentHex = hex;
+        }
+
+        public bool HasValidPosition()
+        {
+            return _hexGridManager?.IsWalkable(CurrentHex) ?? false;
         }
 
         public void SetPosition(HexCoordinate hex)
         {
+            CancelCurrentMovement();
             CurrentHex = hex;
-            transform.position = _hexGridManager.HexToWorld(hex);
+            if (_hexGridManager != null)
+                transform.position = _hexGridManager.HexToWorld(hex);
         }
 
-        [Inject]
-        public void Construct(IHexGridManager hexGridManager, IGameEventManager eventManager)
+        // Wrapper for interface compatibility
+        public async Cysharp.Threading.Tasks.UniTask MoveToAsync(HexCoordinate[] path)
         {
-            _hexGridManager = hexGridManager;
-            _eventManager = eventManager;
+            MoveTo(path);
+            
+            // Wait for movement to complete
+            while (IsMoving)
+            {
+                await Cysharp.Threading.Tasks.UniTask.NextFrame();
+            }
+        }
+
+        private void OnDestroy()
+        {
+            CancelCurrentMovement();
         }
     }
 }

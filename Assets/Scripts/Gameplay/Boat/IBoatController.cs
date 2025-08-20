@@ -11,5 +11,9 @@ namespace Gameplay.Boat
         bool IsMoving { get; }
         UniTask MoveToAsync(HexCoordinate[] path);
         void SetPosition(HexCoordinate hex);
+        void CancelCurrentMovement();
+        HexCoordinate GetCurrentHexFromPosition();
+        bool HasValidPosition();
+        void UpdateCurrentHex(HexCoordinate hex);
     }
 }

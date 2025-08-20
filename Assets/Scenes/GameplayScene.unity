@@ -119,6 +119,68 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1001 &91812652
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 622033944}
+    m_Modifications:
+    - target: {fileID: 619930431975393519, guid: a563157a4ceeb234d8d2b8bbbd4d5ab4, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 619930431975393519, guid: a563157a4ceeb234d8d2b8bbbd4d5ab4, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.107
+      objectReference: {fileID: 0}
+    - target: {fileID: 619930431975393519, guid: a563157a4ceeb234d8d2b8bbbd4d5ab4, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 619930431975393519, guid: a563157a4ceeb234d8d2b8bbbd4d5ab4, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 619930431975393519, guid: a563157a4ceeb234d8d2b8bbbd4d5ab4, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 619930431975393519, guid: a563157a4ceeb234d8d2b8bbbd4d5ab4, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 619930431975393519, guid: a563157a4ceeb234d8d2b8bbbd4d5ab4, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 619930431975393519, guid: a563157a4ceeb234d8d2b8bbbd4d5ab4, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 619930431975393519, guid: a563157a4ceeb234d8d2b8bbbd4d5ab4, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 619930431975393519, guid: a563157a4ceeb234d8d2b8bbbd4d5ab4, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3242643006856148975, guid: a563157a4ceeb234d8d2b8bbbd4d5ab4, type: 3}
+      propertyPath: m_Name
+      value: mauritania_boat
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: a563157a4ceeb234d8d2b8bbbd4d5ab4, type: 3}
+--- !u!4 &91812653 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 619930431975393519, guid: a563157a4ceeb234d8d2b8bbbd4d5ab4, type: 3}
+  m_PrefabInstance: {fileID: 91812652}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &330585543
 GameObject:
   m_ObjectHideFlags: 0
@@ -474,7 +536,8 @@ Transform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 91812653}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &622033945
@@ -524,7 +587,6 @@ MonoBehaviour:
   _touchSensitivity: 1
   _doubleTapTime: 0.3
   _dragThreshold: 50
-  _debugInput: 0
 --- !u!4 &652715859
 Transform:
   m_ObjectHideFlags: 0
@@ -842,15 +904,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _lineRenderer: {fileID: 1501774018}
-  _defaultPathMaterial: {fileID: 2100000, guid: e73a58f6e2794ae7b1b7e50b7fb811b0, type: 2}
+  _defaultPathMaterial: {fileID: 2100000, guid: 209ea2f17ebe64e85a177a9bbad10476, type: 2}
   _animatedPathMaterial: {fileID: 0}
   _pathHeight: 0.1
   _pathWidth: 0.3
   _animatePath: 1
   _animationSpeed: 2
   _pulseIntensity: 0.3
-  _pathColor: {r: 0, g: 1, b: 1, a: 1}
-  _pathColorEnd: {r: 0, g: 0, b: 1, a: 1}
+  _pathColor: {r: 0, g: 1, b: 0.060203552, a: 1}
+  _pathColorEnd: {r: 0.130162, g: 0.7075472, b: 0.16638596, a: 1}
   _startMarkerPrefab: {fileID: 0}
   _endMarkerPrefab: {fileID: 0}
   _wayPointMarkerPrefab: {fileID: 0}
