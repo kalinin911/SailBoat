@@ -182,16 +182,29 @@ namespace Gameplay.Map
             var worldPos = _hexGridManager.HexToWorld(hexCoord);
             var tileType = (TileType)tileValue;
 
+            // Check if a tile already exists at this coordinate
+            if (_hexGridManager.GetHexTile(hexCoord) != null)
+            {
+                Debug.LogWarning($"Tile already exists at {hexCoord}, reusing.");
+                tiles[x, y] = _hexGridManager.GetHexTile(hexCoord); // Reuse existing tile
+                return;
+            }
+
             var tileObj = await CreateTileGameObjectAsync(tileType);
             tileObj.transform.position = worldPos;
 
             var hexTile = tileObj.GetComponent<HexTile>();
             if (hexTile == null)
-                hexTile = tileObj.AddComponent<HexTile>();
+            {
+                hexTile = tileObj.AddComponent<HexTile>(); // Add only if not present
+            }
+            else
+            {
+                Debug.LogWarning($"Prefab {tileObj.name} at {hexCoord} already has HexTile component, using existing.");
+            }
 
             hexTile.Initialize(hexCoord, tileType);
             tiles[x, y] = hexTile;
-
             _hexGridManager.RegisterHexTile(hexCoord, hexTile);
         }
 
@@ -208,7 +221,6 @@ namespace Gameplay.Map
             }
             else
             {
-                // Only try to load terrain variants (remove fallback to old TerrainTile key)
                 var terrainVariant = UnityEngine.Random.Range(1, 8); // 1 to 7
                 var prefabKey = $"TerrainTile{terrainVariant:00}"; // TerrainTile01, TerrainTile02, etc.
                 
