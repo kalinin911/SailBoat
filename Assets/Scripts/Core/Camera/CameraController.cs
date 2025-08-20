@@ -5,11 +5,29 @@ namespace Core.Camera
     public class CameraController : MonoBehaviour, ICameraController
     {
         [SerializeField] private Vector3 _offset = new Vector3(0, 10, -8);
-        [SerializeField] private float _followSmoothing = 2f;
-        [SerializeField] private bool _lookAtTarget = true;
+        [SerializeField] private float _followSmoothing = 8f; // Much smoother
+        [SerializeField] private bool _lockRotation = true; // Keep rotation fixed
+        [SerializeField] private Transform _boatTransform; // Direct reference
+
+        [Header("Grid Movement")]
+        [SerializeField] private bool _snapToGrid = true;
+        [SerializeField] private float _gridSnapThreshold = 0.5f;
 
         private Transform _target;
         private bool _isFollowing;
+        private Quaternion _fixedRotation;
+
+        private void Start()
+        {
+            // Store initial rotation
+            _fixedRotation = transform.rotation;
+            
+            // Auto-follow boat if referenced
+            if (_boatTransform != null)
+            {
+                FollowTarget(_boatTransform);
+            }
+        }
 
         public void FollowTarget(Transform target)
         {
@@ -30,21 +48,43 @@ namespace Core.Camera
 
         private void LateUpdate()
         {
-            if (_isFollowing && _target != null)
+            // Use direct boat reference if no target set
+            var followTarget = _target ?? _boatTransform;
+            
+            if (_isFollowing && followTarget != null)
             {
-                var targetPosition = _target.position + _offset;
-                transform.position = Vector3.Lerp(transform.position, targetPosition, 
-                    _followSmoothing * Time.deltaTime);
-
-                if (_lookAtTarget)
+                var targetPosition = followTarget.position + _offset;
+                
+                // Snap to grid if enabled
+                if (_snapToGrid)
                 {
-                    var lookDirection = _target.position - transform.position;
-                    if (lookDirection != Vector3.zero)
+                    var currentPos = transform.position;
+                    var deltaX = Mathf.Abs(targetPosition.x - currentPos.x);
+                    var deltaZ = Mathf.Abs(targetPosition.z - currentPos.z);
+                    
+                    // Only move if significant change
+                    if (deltaX > _gridSnapThreshold || deltaZ > _gridSnapThreshold)
                     {
-                        var lookRotation = Quaternion.LookRotation(lookDirection);
-                        transform.rotation = Quaternion.Lerp(transform.rotation, lookRotation, 
-                            _followSmoothing * Time.deltaTime);
+                        // Snap X and Z independently
+                        if (deltaX > _gridSnapThreshold)
+                            currentPos.x = Mathf.Lerp(currentPos.x, targetPosition.x, _followSmoothing * Time.deltaTime);
+                        if (deltaZ > _gridSnapThreshold)
+                            currentPos.z = Mathf.Lerp(currentPos.z, targetPosition.z, _followSmoothing * Time.deltaTime);
+                        
+                        currentPos.y = targetPosition.y; // Keep height constant
+                        transform.position = currentPos;
                     }
+                }
+                else
+                {
+                    transform.position = Vector3.Lerp(transform.position, targetPosition, 
+                        _followSmoothing * Time.deltaTime);
+                }
+
+                // Keep rotation fixed
+                if (_lockRotation)
+                {
+                    transform.rotation = _fixedRotation;
                 }
             }
         }
