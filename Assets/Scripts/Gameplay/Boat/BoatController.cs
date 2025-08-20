@@ -2,6 +2,7 @@
 using System.Linq;
 using UnityEngine;
 using Core.HexGrid;
+using Cysharp.Threading.Tasks;
 using Infrastructure.Events;
 using Zenject;
 
@@ -11,6 +12,10 @@ namespace Gameplay.Boat
     {
         [SerializeField] private float _moveSpeed = 5f;
         [SerializeField] private float _rotationSpeed = 90f;
+        
+        [Header("Foam Effects")]
+        [SerializeField] private GameObject _foamEffect;
+        [SerializeField] private Material _foamMaterial;
 
         [Inject] private IHexGridManager _hexGridManager;
         [Inject] private IGameEventManager _eventManager;
@@ -20,6 +25,7 @@ namespace Gameplay.Boat
         public bool IsMoving { get; private set; }
 
         private Coroutine _currentMovement;
+        private float _foamPhase = 0f;
 
         public void MoveTo(HexCoordinate[] path)
         {
@@ -39,6 +45,9 @@ namespace Gameplay.Boat
         private IEnumerator MoveAlongPath(HexCoordinate[] path)
         {
             IsMoving = true;
+            
+            // Enable foam effect
+            SetFoamActive(true);
 
             // Trigger start event
             try
@@ -63,9 +72,10 @@ namespace Gameplay.Boat
                 CurrentHex = targetHex;
             }
 
-            // Complete movement
+            // Complete movement and disable foam
             IsMoving = false;
             _currentMovement = null;
+            SetFoamActive(false);
 
             try
             {
@@ -120,6 +130,34 @@ namespace Gameplay.Boat
                 _currentMovement = null;
                 IsMoving = false;
             }
+            
+            // Disable foam effect
+            SetFoamActive(false);
+        }
+
+        private void SetFoamActive(bool active)
+        {
+            if (_foamEffect != null)
+            {
+                _foamEffect.SetActive(active);
+                
+                if (active && _foamMaterial != null)
+                {
+                    // Reset foam animation phase when starting
+                    _foamPhase = 0f;
+                    _foamMaterial.SetFloat("_Phase", _foamPhase);
+                }
+            }
+        }
+
+        private void Update()
+        {
+            // Animate foam while moving
+            if (IsMoving && _foamMaterial != null)
+            {
+                _foamPhase += Time.deltaTime * 2f; // Animation speed
+                _foamMaterial.SetFloat("_Phase", Mathf.PingPong(_foamPhase, 1f));
+            }
         }
 
         public HexCoordinate GetCurrentHexFromPosition()
@@ -148,14 +186,14 @@ namespace Gameplay.Boat
         }
 
         // Wrapper for interface compatibility
-        public async Cysharp.Threading.Tasks.UniTask MoveToAsync(HexCoordinate[] path)
+        public async UniTask MoveToAsync(HexCoordinate[] path)
         {
             MoveTo(path);
             
             // Wait for movement to complete
             while (IsMoving)
             {
-                await Cysharp.Threading.Tasks.UniTask.NextFrame();
+                await UniTask.NextFrame();
             }
         }
 
