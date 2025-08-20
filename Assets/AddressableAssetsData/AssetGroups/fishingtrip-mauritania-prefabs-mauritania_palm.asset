@@ -16,7 +16,7 @@ MonoBehaviour:
   m_GUID: 087e40686da91e240acbca4e12f6b43c
   m_SerializeEntries:
   - m_GUID: b35c3520e51f16b4b926de456ba3442b
-    m_Address: Assets/Mauritania/Prefabs/mauritania_palm.prefab
+    m_Address: Palm
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

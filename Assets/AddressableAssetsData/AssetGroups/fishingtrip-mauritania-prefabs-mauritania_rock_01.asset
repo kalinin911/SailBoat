@@ -16,7 +16,7 @@ MonoBehaviour:
   m_GUID: 248c54bc568b33f4092f3462bacc4863
   m_SerializeEntries:
   - m_GUID: 79bc8673043ebe146b9e496e7b4f1d0c
-    m_Address: Rock
+    m_Address: Rock01
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

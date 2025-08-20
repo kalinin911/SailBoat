@@ -16,7 +16,7 @@ MonoBehaviour:
   m_GUID: 5166f0ad155bbce4498b87e55d82c0ee
   m_SerializeEntries:
   - m_GUID: 278c0478a35a9bf4eaae05cd73ca6a61
-    m_Address: Assets/Mauritania/Prefabs/mauritania_rock_set_02.prefab
+    m_Address: RockSet02
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

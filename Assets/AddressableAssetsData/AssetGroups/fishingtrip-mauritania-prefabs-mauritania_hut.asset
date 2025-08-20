@@ -16,7 +16,7 @@ MonoBehaviour:
   m_GUID: 23bc828a58bb2ea45a767fae23070346
   m_SerializeEntries:
   - m_GUID: 0354479538a422a4ebfba32815f9326b
-    m_Address: Assets/Mauritania/Prefabs/mauritania_hut.prefab
+    m_Address: Hut
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

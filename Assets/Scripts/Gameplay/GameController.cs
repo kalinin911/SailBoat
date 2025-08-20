@@ -75,9 +75,7 @@ namespace Gameplay
             {
                 _mapAssetKey,
                 "WaterTile",
-                "WaterBackground",
-                "Rock",
-                "Vegetation"
+                "WaterBackground"
             };
 
             // Add terrain tile variants
@@ -85,6 +83,14 @@ namespace Gameplay
             {
                 essentialAssets.Add($"TerrainTile{i:00}");
             }
+
+            // Add decoration prefabs
+            var decorationKeys = new[] {
+                "Grass01", "Grass02", "Hut", "Palm", "Plant01",
+                "Rock01", "Rock02", "Rock03", "RockSet01", "RockSet02",
+                "RockSet03", "Vegetation01", "Vegetation02"
+            };
+            essentialAssets.AddRange(decorationKeys);
 
             if (_assetService is AddressableAssetService addressableAssetService)
             {
@@ -105,7 +111,7 @@ namespace Gameplay
                 tiles = await _mapGenerator.GenerateMapAsync(_mapAssetKey);
             }
 
-            await UniTask.Run(() => _mapGenerator.AddRandomVegetationAndRocks(tiles));
+            // No need to call AddRandomVegetationAndRocks as it's now handled in GenerateMapAsync
         }
 
         private async UniTask<HexTile[,]> GenerateMapWithProgressAsync()

@@ -16,7 +16,7 @@ MonoBehaviour:
   m_GUID: 18e16fd2e44cac548a54a98fb17799cd
   m_SerializeEntries:
   - m_GUID: 49d8814ced7610844acde9ae57b0f326
-    m_Address: Vegetation
+    m_Address: Vegetation01
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

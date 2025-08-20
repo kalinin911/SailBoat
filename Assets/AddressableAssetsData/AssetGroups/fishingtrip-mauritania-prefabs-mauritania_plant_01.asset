@@ -16,7 +16,7 @@ MonoBehaviour:
   m_GUID: c12c170c34ac2ee458dc28321f6f02b6
   m_SerializeEntries:
   - m_GUID: 9116ae3ed54f176408083e9aa8cd357b
-    m_Address: Assets/Mauritania/Prefabs/mauritania_plant_01.prefab
+    m_Address: Plant01
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

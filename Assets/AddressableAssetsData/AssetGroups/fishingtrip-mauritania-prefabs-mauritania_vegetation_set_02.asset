@@ -16,7 +16,7 @@ MonoBehaviour:
   m_GUID: 7b9572b709306e2439b2aa305d5a109c
   m_SerializeEntries:
   - m_GUID: e64f4c88ce5e5b04494ed2f910f74e52
-    m_Address: Assets/Mauritania/Prefabs/mauritania_vegetation_set_02.prefab
+    m_Address: Vegetation02
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

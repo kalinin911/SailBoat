@@ -16,6 +16,17 @@ namespace Gameplay.Map
         private readonly IAssetService _assetService;
         private readonly string _backgroundAssetKey = "WaterBackground";
 
+        // List of decoration prefab keys
+        private readonly string[] _decorationKeys = {
+            "Grass01", "Grass02", "Hut", "Palm", "Plant01",
+            "Rock01", "Rock02", "Rock03", "RockSet01", "RockSet02",
+            "RockSet03", "Vegetation01", "Vegetation02"
+        };
+
+        // Cache for decoration prefabs to avoid repeated loads
+        private Dictionary<string, GameObject> _decorationCache = new Dictionary<string, GameObject>();
+        private bool _decorationsPreloaded;
+
         public MapGenerator(IHexGridManager hexGridManager, DiContainer container, IAssetService assetService)
         {
             _hexGridManager = hexGridManager;
@@ -25,6 +36,12 @@ namespace Gameplay.Map
 
         public async UniTask<HexTile[,]> GenerateMapAsync(string mapAssetKey)
         {
+            if (!_decorationsPreloaded)
+            {
+                await PreloadDecorationsAsync();
+                _decorationsPreloaded = true;
+            }
+
             var mapTextAsset = await _assetService.LoadAssetAsync<TextAsset>(mapAssetKey);
 
             if (mapTextAsset == null)
@@ -35,6 +52,30 @@ namespace Gameplay.Map
             var mapData = ParseMapData(mapTextAsset.text);
             await CreateMapBackgroundAsync(mapData);
             return await CreateTilesFromDataAsync(mapData);
+        }
+
+        private async UniTask PreloadDecorationsAsync()
+        {
+            var preloadTasks = new List<UniTask<GameObject>>();
+
+            foreach (var key in _decorationKeys)
+            {
+                preloadTasks.Add(_assetService.LoadAssetAsync<GameObject>(key));
+            }
+
+            var loadedPrefabs = await UniTask.WhenAll(preloadTasks);
+
+            for (int i = 0; i < _decorationKeys.Length; i++)
+            {
+                var key = _decorationKeys[i];
+                _decorationCache[key] = loadedPrefabs[i];
+                if (loadedPrefabs[i] == null)
+                {
+                    Debug.LogWarning($"Failed to preload decoration prefab: {key}");
+                }
+            }
+
+            Debug.Log("All decoration prefabs preloaded and cached.");
         }
 
         private async UniTask CreateMapBackgroundAsync(int[,] mapData)
@@ -206,6 +247,12 @@ namespace Gameplay.Map
             hexTile.Initialize(hexCoord, tileType);
             tiles[x, y] = hexTile;
             _hexGridManager.RegisterHexTile(hexCoord, hexTile);
+
+            // Add decoration simultaneously if terrain and random chance
+            if (tileType == TileType.Terrain && UnityEngine.Random.value < 0.3f)
+            {
+                await AddRandomDecorationAsync(hexTile);
+            }
         }
 
         private async UniTask<GameObject> CreateTileGameObjectAsync(TileType tileType)
@@ -235,42 +282,30 @@ namespace Gameplay.Map
             }
         }
 
-        public void AddRandomVegetationAndRocks(HexTile[,] tiles)
-        {
-            var width = tiles.GetLength(0);
-            var height = tiles.GetLength(1);
+        // Removed AddRandomVegetationAndRocks as it's now integrated into CreateTileAsync
 
-            for (int x = 0; x < width; x++)
+        private async UniTask AddRandomDecorationAsync(HexTile tile)
+        {
+            var randomKey = _decorationKeys[UnityEngine.Random.Range(0, _decorationKeys.Length)];
+
+            var decorationPrefab = _decorationCache.GetValueOrDefault(randomKey);
+
+            if (decorationPrefab == null)
             {
-                for (int y = 0; y < height; y++)
+                // Fallback to async load if not preloaded (though preload should cover)
+                decorationPrefab = await _assetService.LoadAssetAsync<GameObject>(randomKey);
+                if (decorationPrefab == null)
                 {
-                    var tile = tiles[x, y];
-                    if (tile.TileType == TileType.Terrain && UnityEngine.Random.value < 0.3f)
-                    {
-                        AddRandomObstacleAsync(tile).Forget();
-                    }
+                    Debug.LogWarning($"Could not load decoration prefab: {randomKey}");
+                    return;
                 }
             }
-        }
 
-        private async UniTaskVoid AddRandomObstacleAsync(HexTile tile)
-        {
-            string[] obstacleKeys = { "Rock", "Vegetation" };
-            var randomKey = obstacleKeys[UnityEngine.Random.Range(0, obstacleKeys.Length)];
+            var decorationObj = _container.InstantiatePrefab(decorationPrefab);
+            decorationObj.transform.position = tile.transform.position + Vector3.up * 0.1f;
+            decorationObj.transform.SetParent(tile.transform);
 
-            var obstaclePrefab = await _assetService.LoadAssetAsync<GameObject>(randomKey);
-
-            if (obstaclePrefab == null)
-            {
-                Debug.LogWarning($"Could not load obstacle prefab: {randomKey}");
-                return;
-            }
-
-            var obstacleObj = _container.InstantiatePrefab(obstaclePrefab);
-            obstacleObj.transform.position = tile.transform.position + Vector3.up * 0.1f;
-            obstacleObj.transform.SetParent(tile.transform);
-
-            tile.SetObstacle(true);
+            tile.SetObstacle(true); // Assuming decorations act as obstacles; adjust if needed
         }
 
         private int[,] ParseMapData(string mapText)

@@ -16,7 +16,7 @@ MonoBehaviour:
   m_GUID: e449ee3483a070f4cb102998b63c973b
   m_SerializeEntries:
   - m_GUID: 68650c38e034c5a4ca877b9375661926
-    m_Address: Assets/Mauritania/Prefabs/mauritania_grass_02.prefab
+    m_Address: Grass02
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
