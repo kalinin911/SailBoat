@@ -333,7 +333,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _offset: {x: 0, y: 10, z: -8}
   _followSmoothing: 2
-  _lookAtTarget: 1
+  _lockRotation: 1
+  _boatTransform: {fileID: 622033944}
+  _snapToGrid: 1
+  _gridSnapThreshold: 0.5
 --- !u!1 &410087039
 GameObject:
   m_ObjectHideFlags: 0
@@ -1010,7 +1013,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _mapAssetKey: DefaultMap
   _enableAsyncLoading: 1
-  _maxTilesPerFrame: 10
+  _maxTilesPerFrame: 10000
 --- !u!4 &1947214249
 Transform:
   m_ObjectHideFlags: 0
