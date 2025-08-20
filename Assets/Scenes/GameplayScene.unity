@@ -907,10 +907,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _lineRenderer: {fileID: 1501774018}
-  _defaultPathMaterial: {fileID: 2100000, guid: 209ea2f17ebe64e85a177a9bbad10476, type: 2}
+  _defaultPathMaterial: {fileID: 2100000, guid: 06e41ae5386d4024aa4f9892950b944f, type: 2}
   _animatedPathMaterial: {fileID: 0}
   _pathHeight: 0.1
-  _pathWidth: 0.3
+  _pathWidth: 0.1
   _animatePath: 1
   _animationSpeed: 2
   _pulseIntensity: 0.3
