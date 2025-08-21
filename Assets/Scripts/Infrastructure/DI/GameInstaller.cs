@@ -106,6 +106,9 @@ namespace Infrastructure.DI
             {
                 Container.Bind<PerformanceManager>().FromNewComponentOnNewGameObject().AsSingle().NonLazy();
             }
+            
+            Container.Bind<TileCullingManager>().FromComponentInHierarchy().AsSingle();
+            Container.Bind<DeviceCapabilityDetector>().FromComponentInHierarchy().AsSingle();
         }
 
         private void CreateObjectPools()
