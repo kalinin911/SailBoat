@@ -51,6 +51,12 @@ namespace Core.Input
 
         private void HandleDesktopInput()
         {
+            HandleMouseInput();
+            HandleMouseDrag();
+        }
+
+        private void HandleMouseInput()
+        {
             if (UnityEngine.Input.GetMouseButtonDown(0))
             {
                 ProcessClick(UnityEngine.Input.mousePosition);
@@ -60,27 +66,44 @@ namespace Core.Input
             {
                 ProcessAlternativeClick(UnityEngine.Input.mousePosition);
             }
+        }
 
+        private void HandleMouseDrag()
+        {
             if (UnityEngine.Input.GetMouseButtonDown(0))
             {
-                _isDragging = false;
-                _dragStartPosition = UnityEngine.Input.mousePosition;
+                StartDrag(UnityEngine.Input.mousePosition);
             }
             else if (UnityEngine.Input.GetMouseButton(0))
             {
-                var currentPos = UnityEngine.Input.mousePosition;
-                var dragDistance = Vector3.Distance(_dragStartPosition, currentPos);
-                
-                if (dragDistance > _dragThreshold && !_isDragging)
-                {
-                    _isDragging = true;
-                }
+                UpdateDrag(UnityEngine.Input.mousePosition);
             }
             else if (UnityEngine.Input.GetMouseButtonUp(0) && _isDragging)
             {
-                ProcessDrag(_dragStartPosition, UnityEngine.Input.mousePosition);
-                _isDragging = false;
+                EndDrag(UnityEngine.Input.mousePosition);
             }
+        }
+
+        private void StartDrag(Vector3 position)
+        {
+            _isDragging = false;
+            _dragStartPosition = position;
+        }
+
+        private void UpdateDrag(Vector3 currentPosition)
+        {
+            var dragDistance = Vector3.Distance(_dragStartPosition, currentPosition);
+            
+            if (dragDistance > _dragThreshold && !_isDragging)
+            {
+                _isDragging = true;
+            }
+        }
+
+        private void EndDrag(Vector3 endPosition)
+        {
+            ProcessDrag(_dragStartPosition, endPosition);
+            _isDragging = false;
         }
 
         private void HandleMobileInput()
@@ -116,6 +139,12 @@ namespace Core.Input
             _dragStartPosition = touch.position;
             _isDragging = false;
 
+            CheckForDoubleTap(touch);
+            UpdateTapTracking(touch);
+        }
+
+        private void CheckForDoubleTap(Touch touch)
+        {
             float timeSinceLastTap = Time.time - _lastTapTime;
             float distanceFromLastTap = Vector2.Distance(touch.position, _lastTapPosition);
 
@@ -123,7 +152,10 @@ namespace Core.Input
             {
                 ProcessDoubleClick(touch.position);
             }
+        }
 
+        private void UpdateTapTracking(Touch touch)
+        {
             _lastTapTime = Time.time;
             _lastTapPosition = touch.position;
         }
@@ -156,17 +188,16 @@ namespace Core.Input
         private void ProcessClick(Vector2 screenPosition)
         {
             var worldHit = ScreenToWorldHit(screenPosition);
-            if (worldHit.HasValue)
+            if (!worldHit.HasValue) return;
+
+            var hexCoord = _hexGridManager.WorldToHex(worldHit.Value);
+
+            if (_hexGridManager.IsValidHex(hexCoord))
             {
-                var hexCoord = _hexGridManager.WorldToHex(worldHit.Value);
-        
-                if (_hexGridManager.IsValidHex(hexCoord))
-                {
-                    var worldPos = _hexGridManager.HexToWorld(hexCoord);
-            
-                    OnMapClicked?.Invoke(worldPos);
-                    _eventManager.TriggerHexClicked(hexCoord.ToOffset(), worldPos);
-                }
+                var worldPos = _hexGridManager.HexToWorld(hexCoord);
+                
+                OnMapClicked?.Invoke(worldPos);
+                _eventManager.TriggerHexClicked(hexCoord.ToOffset(), worldPos);
             }
         }
 
